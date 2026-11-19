@@ -1,0 +1,291 @@
+class WhatsApp {
+private:
+    vector<User> users;
+    vector<Chat*> chats;
+    int currentUserIndex;
+
+    // Search for a user
+    int findUserIndex(string username) const {
+        for (int i = 0; i < users.size(); i++) {
+            if (users[i].getUsername() == username) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    // Check if someone is logged in
+    bool isLoggedIn() const {
+        return currentUserIndex != -1;
+    }
+
+    // Get current username
+    string getCurrentUsername() const {
+        if (isLoggedIn()) {
+            return users[currentUserIndex].getUsername();
+        }
+        return "";
+    }
+
+public:
+    // Constructor
+    WhatsApp() : currentUserIndex(-1) {}
+
+    // Destructor
+    ~WhatsApp() {
+        for (Chat* chat : chats) {
+            delete chat;
+        }
+    }
+
+    // Sign Up
+    void signUp() {
+        string username, password, phone;
+
+        cout << "\n--- Sign Up ---\n";
+
+        cout << "Enter username: ";
+        cin >> username;
+
+        if (findUserIndex(username) != -1) {
+            cout << "Username already exists!\n";
+            return;
+        }
+
+        cout << "Enter password: ";
+        cin >> password;
+
+        cout << "Enter phone number: ";
+        cin >> phone;
+
+        users.push_back(User(username, password, phone));
+
+        cout << "Account created successfully!\n";
+    }
+
+    // Login
+    void login() {
+        string username, password;
+
+        cout << "\n--- Login ---\n";
+
+        cout << "Enter username: ";
+        cin >> username;
+
+        int index = findUserIndex(username);
+
+        if (index == -1) {
+            cout << "User not found!\n";
+            return;
+        }
+
+        cout << "Enter password: ";
+        cin >> password;
+
+        if (users[index].checkPassword(password)) {
+            currentUserIndex = index;
+            cout << "Login successful! Welcome "
+                 << username << "\n";
+        }
+        else {
+            cout << "Incorrect password!\n";
+        }
+    }
+
+    // Start Private Chat
+    void startPrivateChat() {
+        if (!isLoggedIn()) {
+            cout << "Please login first!\n";
+            return;
+        }
+
+        string otherUsername;
+
+        cout << "Enter username to chat with: ";
+        cin >> otherUsername;
+
+        int index = findUserIndex(otherUsername);
+
+        if (index == -1) {
+            cout << "User not found!\n";
+            return;
+        }
+
+        string currentUsername = getCurrentUsername();
+
+        if (currentUsername == otherUsername) {
+            cout << "You cannot chat with yourself!\n";
+            return;
+        }
+
+        Chat* newChat =
+            new PrivateChat(currentUsername, otherUsername);
+
+        chats.push_back(newChat);
+
+        cout << "Private chat created successfully!\n";
+    }
+
+    // Create Group
+    void createGroup() {
+        if (!isLoggedIn()) {
+            cout << "Please login first!\n";
+            return;
+        }
+
+        string groupName;
+        int numberOfUsers;
+
+        cout << "Enter group name: ";
+        cin >> groupName;
+
+        cout << "Enter number of other participants: ";
+        cin >> numberOfUsers;
+
+        if (numberOfUsers < 1) {
+            cout << "A group needs at least one other participant!\n";
+            return;
+        }
+
+        vector<string> participants;
+
+        // Add current user
+        string creator = getCurrentUsername();
+        participants.push_back(creator);
+
+        // Add other participants
+        for (int i = 0; i < numberOfUsers; i++) {
+            string username;
+
+            cout << "Enter participant " << i + 1 << ": ";
+            cin >> username;
+
+            if (findUserIndex(username) == -1) {
+                cout << "User does not exist. Try again.\n";
+                i--;
+                continue;
+            }
+
+            bool duplicate = false;
+
+            for (const string& p : participants) {
+                if (p == username) {
+                    duplicate = true;
+                    break;
+                }
+            }
+
+            if (duplicate) {
+                cout << "This user is already in the group!\n";
+                i--;
+                continue;
+            }
+
+            participants.push_back(username);
+        }
+
+        Chat* newGroup =
+            new GroupChat(participants, groupName, creator);
+
+        chats.push_back(newGroup);
+
+        cout << "Group created successfully!\n";
+    }
+
+    // View Chats
+    void viewChats() const {
+        if (!isLoggedIn()) {
+            cout << "Please login first!\n";
+            return;
+        }
+
+        string username = getCurrentUsername();
+        bool found = false;
+
+        cout << "\n--- Your Chats ---\n";
+
+        for (int i = 0; i < chats.size(); i++) {
+            if (chats[i]->hasParticipant(username)) {
+                chats[i]->displayChat();
+                found = true;
+            }
+        }
+
+        if (!found) {
+            cout << "You have no chats yet.\n";
+        }
+    }
+
+    // Logout
+    void logout() {
+        if (!isLoggedIn()) {
+            cout << "No user is logged in!\n";
+            return;
+        }
+
+        users[currentUserIndex].updateLastSeen();
+
+        cout << "Goodbye, "
+             << getCurrentUsername() << "!\n";
+
+        currentUserIndex = -1;
+    }
+
+    // Main Menu
+    void run() {
+        while (true) {
+
+            if (!isLoggedIn()) {
+                cout << "\n===== WhatsApp =====\n";
+                cout << "1. Login\n";
+                cout << "2. Sign Up\n";
+                cout << "3. Exit\n";
+                cout << "Choice: ";
+
+                int choice;
+                cin >> choice;
+
+                if (choice == 1)
+                    login();
+
+                else if (choice == 2)
+                    signUp();
+
+                else if (choice == 3) {
+                    cout << "Exiting WhatsApp...\n";
+                    break;
+                }
+
+                else
+                    cout << "Invalid choice!\n";
+            }
+
+            else {
+                cout << "\n===== WhatsApp Menu =====\n";
+                cout << "1. Start Private Chat\n";
+                cout << "2. Create Group\n";
+                cout << "3. View Chats\n";
+                cout << "4. Logout\n";
+                cout << "Choice: ";
+
+                int choice;
+                cin >> choice;
+
+                if (choice == 1)
+                    startPrivateChat();
+
+                else if (choice == 2)
+                    createGroup();
+
+                else if (choice == 3)
+                    viewChats();
+
+                else if (choice == 4)
+                    logout();
+
+                else
+                    cout << "Invalid choice!\n";
+            }
+        }
+    }
+};
