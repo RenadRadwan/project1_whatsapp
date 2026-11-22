@@ -144,32 +144,89 @@ protected:
 public:
     Chat() {
         // TODO: Implement default constructor
+        chatName="";
+        messages={};
+        participants={};
     }
+    virtual ~Chat() {}
     
     Chat(vector<string> users, string name) {
         // TODO: Implement parameterized constructor
+        participants=users;
+        chatName=name;
     }
     
     void addMessage(const Message& msg) {
         // TODO: Implement message addition
+        messages.push_back(msg);
     }
     
     bool deleteMessage(int index, const string& username) {
         // TODO: Implement message deletion
+        bool ismember=false;
+       for (int i = 0; i < participants.size(); i++)
+       {
+        if (participants[i]==username)
+        {
+            ismember=true;
+            break;
+        }
+        
+       }
+       if (!ismember)
+       {
         return false;
+       }
+       if (index<0 || index>=messages.size())
+       {
+        return false;
+       }
+       if (messages[index].getSender()!=username)
+       {
+        return false;
+       }
+       
+       messages.erase(messages.begin()+index);
+        
+        return true;
     }
     
     virtual void displayChat() const {
         // TODO: Implement chat display
+        cout<<"Chat: "<<chatName<<endl;
+        if (messages.empty())
+        {
+            cout<<"No Messages";
+            return;
+        }
+        
+        for (int i = 0; i < messages.size(); i++)
+        {
+            messages[i].display();
+            cout<<" ";
+        }
+        
+
     }
     
     vector<Message> searchMessages(string keyword) const {
         // TODO: Implement message search
-        return {};
+       vector<Message> result;
+        for (int i = 0; i < messages.size(); i++)
+        {
+            if (messages[i].getContent().find(keyword) != string::npos)
+            {
+                result.push_back(messages[i]);
+            }
+            
+        }
+
+        return result;
     }
     
     void exportToFile(const string& filename) const {
         // TODO: Implement export to file
+
     }
 };
 
